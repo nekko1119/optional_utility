@@ -86,3 +86,8 @@ int main()
 
 ```
 
+## TODO
+
+ * `filtered`
+ * lazy evaluation
+ * support member function pointer
