@@ -4,7 +4,8 @@ Header only, `boost::optional` 's utilities.
 
 ## Features
 
- * *map* and *flat map*. These interfaces are like `boost::range::adaptor`
+ * *map* and *flat map*. these interfaces are like *Boost Range Adaptors*
+ * adaptors are lazy evaluation
  * Non-member functions, `value`, `value_or` and `value_or_eval`
  * Non-member function, `value_or_throw`. This throws whatever exception if `boost::optional` is `boost::none`;
 
@@ -19,9 +20,20 @@ Just through the path to your build tree.
 
 ## Tested Compilers
 
- * gcc 4.7.3 4.8.1 4.8.2 4.9.0 4.9.1 4.9.2
- * clang 3.1 3.2 3.3 3.4 3.5
- * msvc 12.0 12.CTP 14.0PR
+ * gcc
+   - 4.8.1
+   - 4.8.2
+   - 4.9.0
+   - 4.9.1
+   - 4.9.2
+ * clang
+   - 3.1
+   - 3.2
+   - 3.3
+   - 3.4
+   - 3.5
+ * msvc
+   - 14.0PR
 
 ## Usage Example
 
@@ -89,5 +101,4 @@ int main()
 ## TODO
 
  * `filtered`
- * lazy evaluation
  * support member function pointer
