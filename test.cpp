@@ -6,7 +6,6 @@
 #include <string>
 using boost::optional;
 
-/*
 // returns joined strings if both strings has a value. otherwise none;
 optional<std::string> full_name(optional<std::string> const& first_name, optional<std::string> const& last_name)
 {
@@ -14,7 +13,7 @@ optional<std::string> full_name(optional<std::string> const& first_name, optiona
     using optional_utility::mapped;
     return last_name | flat_mapped([&first_name](std::string const& ln) {
         return first_name | mapped([&ln](std::string const& fn) {
-            return ln + " " + fn;
+            return ln + fn;
         });
     });
 }
@@ -25,21 +24,13 @@ optional<int> divide(int dividend, int divisor)
         return boost::none;
     }
     return dividend / divisor;
-}*/
-
-#include <boost/range/adaptor/transformed.hpp>
+}
 
 int main()
 {
-    using optional_utility::mapped;
-    using optional_utility::flat_mapped;
-    boost::optional<int> op = 42;
-    auto op2 = op
-        | flat_mapped([](int i) { std::cout << "a\n"; return boost::none; })
-        | flat_mapped([](int i) { std::cout << "a\n"; return boost::optional<int>(i); });
-    /*
+    // `mapped` and `flat_mapped`
     {
-        // example of `mapped` and `flat_mapped`
+        // basic usage
         auto const first_name = boost::make_optional<std::string>("John");
         auto const last_name = boost::make_optional<std::string>("Smith");
         std::cout << full_name(first_name, last_name) << std::endl; // John Smith
@@ -48,8 +39,23 @@ int main()
         std::cout << full_name(boost::none, boost::none) << std::endl; // -- 
     }
     {
+        // adaptors are lazy evaluation
+        using optional_utility::mapped;
+        auto const op = boost::make_optional<int>(42);
+        int counter = 0;
+        auto const temp = op
+            | mapped([&counter](int i) { ++counter;  return i * 2; })
+            | mapped([&counter](int i) { ++counter;  return i + 1; });
+        // it is not evalutated yet
+        std::cout << counter << std::endl; // 0
+        // it is evaluated
+        boost::optional<int> op2 = temp;
+        std::cout << counter << std::endl; // 2
+        std::cout << op2 << std::endl; // 85
+    }
+    // non-member functions
+    {
 
-        // gets held value or default value
         using optional_utility::value_or;
         auto const op = divide(42, std::random_device{}() % 2);
         std::cout << value_or(op, 0) << std::endl; // 42 or 0
@@ -58,10 +64,10 @@ int main()
         using optional_utility::value_or_throw;
         optional<int> const op = boost::none;
         try {
-            // you can throw whatever exception if optional is none
+            // throw any exception if optional is none
             value_or_throw<std::runtime_error>(op, "none!");
         } catch (std::exception const& e) {
-            std::cout << e.what() << std::endl;
+            std::cout << e.what() << std::endl; // none!
         }
     }
     // tests
@@ -86,9 +92,9 @@ int main()
         auto lval = boost::make_optional(0);
         auto const clval = boost::make_optional(1);
         auto rval = boost::make_optional(2);
-        value_or_eval(lval, [](){ return 42; });
-        value_or_eval(clval, [](){ return 42; });
-        value_or_eval(std::move(rval), [](){ return 42; });
+        value_or_eval(lval, []() { return 42; });
+        value_or_eval(clval, []() { return 42; });
+        value_or_eval(std::move(rval), []() { return 42; });
     }
     {
         using optional_utility::value_or_throw;
@@ -99,5 +105,4 @@ int main()
         value_or_throw<std::runtime_error>(clval, "");
         value_or_throw<std::runtime_error>(std::move(rval), "");
     }
-    */
 }

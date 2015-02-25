@@ -38,15 +38,15 @@ namespace optional_utility
     }
 
     template <typename T, typename F>
-    inline typename boost::optional<T>::value_type value_or_eval(boost::optional<T> const& op, F f)
+    inline typename boost::optional<T>::value_type value_or_eval(boost::optional<T> const& op, F&& f)
     {
-        return std::move(op.value_or_eval(std::move(f)));
+        return std::move(op.value_or_eval(std::forward<F>(f)));
     }
 
     template <typename T, typename F>
-    inline typename boost::optional<T>::value_type value_or_eval(boost::optional<T>&& op, F f)
+    inline typename boost::optional<T>::value_type value_or_eval(boost::optional<T>&& op, F&& f)
     {
-        return std::move(op.value_or_eval(std::move(f)));
+        return std::move(op.value_or_eval(std::forward<F>(f)));
     }
 
     template <typename Exception, typename T, typename ...Args>
@@ -68,7 +68,8 @@ namespace optional_utility
     }
 
     template <typename Exception, typename T, typename ...Args>
-    typename boost::optional<T>::reference_type_of_temporary_wrapper value_or_throw(boost::optional<T>&& op, Args&&... args)
+    auto value_or_throw(boost::optional<T>&& op, Args&&... args)
+        -> typename boost::optional<T>::reference_type_of_temporary_wrapper
     {
         if (!op) {
             throw Exception{std::forward<Args>(args)...};
@@ -82,36 +83,46 @@ namespace optional_utility
         boost::optional<T> optional;
     public:
         optional_wrapper(boost::optional<T> op)
-            : optional(std::move(op))
+            : optional{std::move(op)}
         {
         }
 
-        boost::optional<T> apply() const
+        boost::optional<T> evaluate() const&
         {
             return optional;
+        }
+
+        boost::optional<T> evaluate() &&
+        {
+            return std::move(optional);
         }
     };
 
     template <typename Adaptor, typename Optional>
     class optional_view
     {
-        Adaptor adaptor;
+        boost::optional<Adaptor> adaptor;
         Optional optional;
     public:
+        optional_view(boost::none_t)
+            : adaptor{boost::none}, optional{boost::none}
+        {
+        }
+
         optional_view(Adaptor adapt, Optional op)
-            : adaptor{adapt}, optional{std::move(op)}
+            : adaptor{std::move(adapt)}, optional{std::move(op)}
         {
         }
 
         template <typename T>
-        operator boost::optional<T> () const
+        operator boost::optional<T>() const
         {
-            return adaptor(optional.apply());
+            return adaptor ? adaptor.get()(optional.evaluate()) : boost::none;
         }
 
-        auto apply() const -> std::remove_reference_t<decltype(adaptor(optional.apply()))>
+        auto evaluate() const -> decltype(adaptor ? (*adaptor)(optional.evaluate()) : boost::none)
         {
-            return adaptor(optional.apply());
+            return adaptor ?  adaptor.get()(optional.evaluate()) : boost::none;
         }
     };
 
@@ -120,24 +131,29 @@ namespace optional_utility
     {
         F f;
     public:
-        explicit flat_mapped_t(F f)
+        explicit flat_mapped_t(F&& f)
             : f(std::forward<F>(f))
         {
         }
 
         template <typename T>
         auto operator()(boost::optional<T> const& op) const
-            -> typename std::result_of<F (T)>::type
+            -> typename std::result_of<F(T)>::type
         {
             if (!op) {
                 return boost::none;
             }
             return f(op.get());
         }
+
+        inline boost::none_t operator()(boost::none_t const&) const noexcept
+        {
+            return boost::none;
+        }
     };
 
     template <typename F>
-    inline flat_mapped_t<F> flat_mapped(F f)
+    inline flat_mapped_t<F> flat_mapped(F&& f)
     {
         return flat_mapped_t<F>(std::forward<F>(f));
     }
@@ -147,38 +163,51 @@ namespace optional_utility
     {
         F f;
     public:
-        explicit mapped_t(F f)
+        explicit mapped_t(F&& f)
             : f(std::forward<F>(f))
         {
         }
 
         template <typename T>
         auto operator()(boost::optional<T> const& op) const
-            -> boost::optional<typename std::result_of<F (T)>::type>
+            -> boost::optional<typename std::result_of<F(T)>::type>
         {
             if (!op) {
                 return boost::none;
             }
             return boost::make_optional(f(op.get()));
         }
+
+        inline boost::none_t operator()(boost::none_t const&) const noexcept
+        {
+            return boost::none;
+        }
     };
 
     template <typename F>
-    inline mapped_t<F> mapped(F f)
+    inline mapped_t<F> mapped(F&& f)
     {
         return mapped_t<F>(std::forward<F>(f));
     }
 
     template <typename Optional, typename Adaptor>
-    inline optional_view<Adaptor, Optional> operator|(Optional op, Adaptor adaptor)
+    inline optional_view<Adaptor, Optional> operator|(Optional&& op, Adaptor&& adaptor)
     {
-        return optional_view<Adaptor, Optional>(adaptor, std::move(op));
+        return optional_view<Adaptor, Optional>(std::forward<Adaptor>(adaptor), std::forward<Optional>(op));
     }
 
     template <typename T, typename Adaptor>
-    inline optional_view<Adaptor, optional_wrapper<T>> operator|(boost::optional<T> op, Adaptor adaptor)
+    inline optional_view<Adaptor, optional_wrapper<T>> operator|(boost::optional<T> op, Adaptor&& adaptor)
     {
-        return optional_view<Adaptor, optional_wrapper<T>>(adaptor, optional_wrapper<T>{std::move(op)});
+        return optional_view<Adaptor, optional_wrapper<T>>(
+            std::forward<Adaptor>(adaptor), optional_wrapper<T>{std::move(op)}
+        );
+    }
+
+    template <typename Adaptor>
+    inline boost::none_t operator|(boost::none_t const&, Adaptor&&) noexcept
+    {
+        return boost::none;
     }
 }
 
