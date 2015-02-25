@@ -76,6 +76,45 @@ namespace optional_utility
         return std::move(op.value());
     }
 
+    template <typename T>
+    class optional_wrapper
+    {
+        boost::optional<T> optional;
+    public:
+        optional_wrapper(boost::optional<T> op)
+            : optional(std::move(op))
+        {
+        }
+
+        boost::optional<T> apply() const
+        {
+            return optional;
+        }
+    };
+
+    template <typename Adaptor, typename Optional>
+    class optional_view
+    {
+        Adaptor adaptor;
+        Optional optional;
+    public:
+        optional_view(Adaptor adapt, Optional op)
+            : adaptor{adapt}, optional{std::move(op)}
+        {
+        }
+
+        template <typename T>
+        operator boost::optional<T> () const
+        {
+            return adaptor(optional.apply());
+        }
+
+        auto apply() const -> std::remove_reference_t<decltype(adaptor(optional.apply()))>
+        {
+            return adaptor(optional.apply());
+        }
+    };
+
     template <typename F>
     class flat_mapped_t
     {
@@ -130,16 +169,16 @@ namespace optional_utility
         return mapped_t<F>(std::forward<F>(f));
     }
 
-    template <typename T, typename F>
-    inline auto operator|(boost::optional<T> const& op, F f) -> decltype(f(op))
+    template <typename Optional, typename Adaptor>
+    inline optional_view<Adaptor, Optional> operator|(Optional op, Adaptor adaptor)
     {
-        return f(op);
+        return optional_view<Adaptor, Optional>(adaptor, std::move(op));
     }
 
-    template <typename F>
-    inline boost::none_t operator|(boost::none_t const&, F)
+    template <typename T, typename Adaptor>
+    inline optional_view<Adaptor, optional_wrapper<T>> operator|(boost::optional<T> op, Adaptor adaptor)
     {
-        return boost::none;
+        return optional_view<Adaptor, optional_wrapper<T>>(adaptor, optional_wrapper<T>{std::move(op)});
     }
 }
 

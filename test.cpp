@@ -6,6 +6,7 @@
 #include <string>
 using boost::optional;
 
+/*
 // returns joined strings if both strings has a value. otherwise none;
 optional<std::string> full_name(optional<std::string> const& first_name, optional<std::string> const& last_name)
 {
@@ -24,10 +25,19 @@ optional<int> divide(int dividend, int divisor)
         return boost::none;
     }
     return dividend / divisor;
-}
+}*/
+
+#include <boost/range/adaptor/transformed.hpp>
 
 int main()
 {
+    using optional_utility::mapped;
+    using optional_utility::flat_mapped;
+    boost::optional<int> op = 42;
+    auto op2 = op
+        | flat_mapped([](int i) { std::cout << "a\n"; return boost::none; })
+        | flat_mapped([](int i) { std::cout << "a\n"; return boost::optional<int>(i); });
+    /*
     {
         // example of `mapped` and `flat_mapped`
         auto const first_name = boost::make_optional<std::string>("John");
@@ -89,4 +99,5 @@ int main()
         value_or_throw<std::runtime_error>(clval, "");
         value_or_throw<std::runtime_error>(std::move(rval), "");
     }
+    */
 }
