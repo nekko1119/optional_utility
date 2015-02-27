@@ -2,6 +2,7 @@
 #define OPTIONAL_UTILITY_HPP
 
 #include <functional>
+#include <type_traits>
 #include <utility>
 #include <boost/optional.hpp>
 
@@ -82,7 +83,7 @@ namespace optional_utility
     {
         boost::optional<T> optional;
     public:
-        optional_wrapper(boost::optional<T> op)
+        explicit optional_wrapper(boost::optional<T> op)
             : optional{std::move(op)}
         {
         }
@@ -115,14 +116,25 @@ namespace optional_utility
         }
 
         template <typename T>
-        operator boost::optional<T>() const
+        operator boost::optional<T>() const&
         {
             return adaptor ? adaptor.get()(optional.evaluate()) : boost::none;
         }
 
-        auto evaluate() const -> decltype(adaptor ? (*adaptor)(optional.evaluate()) : boost::none)
+        template <typename T>
+        operator boost::optional<T>() &&
         {
-            return adaptor ?  adaptor.get()(optional.evaluate()) : boost::none;
+            return adaptor ? std::move(adaptor.get()(optional.evaluate())) : boost::none;
+        }
+
+        auto evaluate() const&
+        {
+            return adaptor ? adaptor.get()(optional.evaluate()) : boost::none;
+        }
+
+        auto evaluate() &&
+        {
+            return adaptor ? adaptor.get()(optional.evaluate()) : boost::none;
         }
     };
 
@@ -131,14 +143,13 @@ namespace optional_utility
     {
         F f;
     public:
-        explicit flat_mapped_t(F&& f)
-            : f(std::forward<F>(f))
+        explicit flat_mapped_t(F f)
+            : f(std::move(f))
         {
         }
 
-        template <typename T>
-        auto operator()(boost::optional<T> const& op) const
-            -> typename std::result_of<F(T)>::type
+        template <typename T, typename R = std::result_of<F(T)>::type>
+        R operator()(boost::optional<T> const& op) const
         {
             if (!op) {
                 return boost::none;
@@ -158,20 +169,27 @@ namespace optional_utility
         return flat_mapped_t<F>(std::forward<F>(f));
     }
 
+    template <typename R, typename T, typename ...Params, typename ...Args>
+    inline auto flat_mapped(R(T::*mem_fun)(Params...) const, Args&&... args)
+    {
+        // be careful to referenced object lifetime
+        return flat_mapped([&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); });
+    }
+
     template <typename F>
     class mapped_t
     {
         F f;
     public:
-        explicit mapped_t(F&& f)
-            : f(std::forward<F>(f))
+        explicit mapped_t(F f)
+            : f(std::move(f))
         {
         }
 
-        template <typename T>
-        auto operator()(boost::optional<T> const& op) const
-            -> boost::optional<typename std::result_of<F(T)>::type>
+        template <typename T, typename R = std::result_of<F(T)>::type>
+        boost::optional<R> operator()(boost::optional<T> const& op) const
         {
+            static_assert(!std::is_void<R>::value, "returns non void type");
             if (!op) {
                 return boost::none;
             }
@@ -188,6 +206,13 @@ namespace optional_utility
     inline mapped_t<F> mapped(F&& f)
     {
         return mapped_t<F>(std::forward<F>(f));
+    }
+
+    template <typename R, typename T, typename ...Params, typename ...Args>
+    inline auto mapped(R(T::*mem_fun)(Params...) const, Args&&... args)
+    {
+        // be careful to referenced object lifetime
+        return mapped([&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); });
     }
 
     template <typename Optional, typename Adaptor>

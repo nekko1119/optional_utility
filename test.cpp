@@ -55,7 +55,6 @@ int main()
     }
     // non-member functions
     {
-
         using optional_utility::value_or;
         auto const op = divide(42, std::random_device{}() % 2);
         std::cout << value_or(op, 0) << std::endl; // 42 or 0
@@ -69,6 +68,14 @@ int main()
         } catch (std::exception const& e) {
             std::cout << e.what() << std::endl; // none!
         }
+    }
+    {
+        using optional_utility::mapped;
+        auto const  op = boost::make_optional<std::string>("hello");
+        boost::optional<std::string::size_type> op2 = op
+            | mapped(&std::string::substr, 1, 3)
+            | mapped(&std::string::length);
+        std::cout << op2 << std::endl;
     }
     // tests
     {
