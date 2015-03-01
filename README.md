@@ -4,8 +4,9 @@ Header only, `boost::optional` 's utilities.
 
 ## Features
 
- * *map* and *flat map*. these interfaces are like *Boost Range Adaptors*
+ * *map*, *flat map* and *filter*. these interfaces are like *Boost Range Adaptors*
  * Adaptors are lazy evaluation
+ * You can use member functions intead of lambda functions
  * Non-member functions, `value`, `value_or` and `value_or_eval`
  * Non-member function, `value_or_throw`. This throws whatever exception if `boost::optional` is `boost::none`;
 
@@ -110,8 +111,3 @@ int main()
 
 
 ```
-
-## TODO
-
- * `filtered`
- * Support member function pointer
