@@ -77,39 +77,4 @@ int main()
             | mapped(&std::string::length);
         std::cout << op2 << std::endl;
     }
-    // tests
-    {
-        using optional_utility::value;
-        auto lval = boost::make_optional(0);
-        auto const clval = boost::make_optional(1);
-        auto rval = boost::make_optional(2);
-        value(lval);
-        value(clval);
-        value(std::move(rval));
-    }
-    {
-        using optional_utility::value_or;
-        auto const clval = boost::make_optional(1);
-        auto rval = boost::make_optional(2);
-        value_or(clval, 42);
-        value_or(std::move(rval), 42);
-    }
-    {
-        using optional_utility::value_or_eval;
-        auto lval = boost::make_optional(0);
-        auto const clval = boost::make_optional(1);
-        auto rval = boost::make_optional(2);
-        value_or_eval(lval, []() { return 42; });
-        value_or_eval(clval, []() { return 42; });
-        value_or_eval(std::move(rval), []() { return 42; });
-    }
-    {
-        using optional_utility::value_or_throw;
-        auto lval = boost::make_optional(0);
-        auto const clval = boost::make_optional(1);
-        auto rval = boost::make_optional(2);
-        value_or_throw<std::runtime_error>(lval, "");
-        value_or_throw<std::runtime_error>(clval, "");
-        value_or_throw<std::runtime_error>(std::move(rval), "");
-    }
 }
