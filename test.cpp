@@ -68,14 +68,15 @@ TEST(mapped)
 TEST(member_function)
 {
     using optional_utility::mapped;
+    using namespace std::string_literals;
     {
-        boost::optional<std::string> op = "hello";
+        boost::optional<std::string> op = "hello"s;
         boost::optional<std::string::size_type> op2 = op
             | mapped(&std::string::length);
         assert(op2.get() == 5);
     }
     {
-        boost::optional<std::string> op = "hello";
+        boost::optional<std::string> op = "hello"s;
         boost::optional<std::string> op2 = op
             | mapped(&std::string::substr, 1, 3);
         assert(op2.get() == "ell");

@@ -148,7 +148,7 @@ namespace optional_utility
         {
         }
 
-        template <typename T, typename R = std::result_of<F(T)>::type>
+        template <typename T, typename R = typename std::result_of<F(T)>::type>
         R operator()(boost::optional<T> const& op) const
         {
             if (!op) {
@@ -186,7 +186,7 @@ namespace optional_utility
         {
         }
 
-        template <typename T, typename R = std::result_of<F(T)>::type>
+        template <typename T, typename R = typename std::result_of<F(T)>::type>
         boost::optional<R> operator()(boost::optional<T> const& op) const
         {
             static_assert(!std::is_void<R>::value, "Function must not return void type");
@@ -225,7 +225,7 @@ namespace optional_utility
         {
         }
 
-        template <typename T, typename R = std::result_of<F(T)>::type>
+        template <typename T, typename R = typename std::result_of<F(T)>::type>
         boost::optional<T> operator()(boost::optional<T> const& op) const
         {
             static_assert(std::is_convertible<R, bool>::value, "Pred must return bool type");
@@ -256,7 +256,7 @@ namespace optional_utility
 
     struct to_optional_tag
     {
-    } const to_optional;
+    } const to_optional{};
 
     template <typename Optional, typename Adaptor>
     inline optional_view<Adaptor, Optional> operator|(Optional&& op, Adaptor&& adaptor)
