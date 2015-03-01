@@ -189,7 +189,7 @@ namespace optional_utility
         template <typename T, typename R = std::result_of<F(T)>::type>
         boost::optional<R> operator()(boost::optional<T> const& op) const
         {
-            static_assert(!std::is_void<R>::value, "returns non void type");
+            static_assert(!std::is_void<R>::value, "Function must not return void type");
             if (!op) {
                 return boost::none;
             }
@@ -215,10 +215,59 @@ namespace optional_utility
         return mapped([&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); });
     }
 
+    template <typename F>
+    class filtered_t
+    {
+        F f;
+    public:
+        explicit filtered_t(F f)
+            : f(std::move(f))
+        {
+        }
+
+        template <typename T, typename R = std::result_of<F(T)>::type>
+        boost::optional<T> operator()(boost::optional<T> const& op) const
+        {
+            static_assert(std::is_convertible<R, bool>::value, "Pred must return bool type");
+            if (!op) {
+                return boost::none;
+            }
+            return f(op.get()) ? op.get() : boost::none;
+        }
+
+        inline boost::none_t operator()(boost::none_t const&) const noexcept
+        {
+            return boost::none;
+        }
+    };
+
+    template <typename F>
+    inline filtered_t<F> filtered(F&& f)
+    {
+        return filtered_t<F>(std::forward<F>(f));
+    }
+
+    template <typename R, typename T, typename ...Params, typename ...Args>
+    inline auto filtered(R(T::*mem_fun)(Params...) const, Args&&... args)
+    {
+        // be careful to referenced object lifetime
+        return filtered([&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); });
+    }
+
+    struct to_optional_tag
+    {
+    } const to_optional;
+
     template <typename Optional, typename Adaptor>
     inline optional_view<Adaptor, Optional> operator|(Optional&& op, Adaptor&& adaptor)
     {
         return optional_view<Adaptor, Optional>(std::forward<Adaptor>(adaptor), std::forward<Optional>(op));
+    }
+
+    template <typename Optional>
+    inline auto operator|(Optional&& op, to_optional_tag)
+    {
+        return op.evaluate();
     }
 
     template <typename T, typename Adaptor>
@@ -227,6 +276,12 @@ namespace optional_utility
         return optional_view<Adaptor, optional_wrapper<T>>(
             std::forward<Adaptor>(adaptor), optional_wrapper<T>{std::move(op)}
         );
+    }
+
+    template <typename T>
+    inline boost::optional<T> operator|(boost::optional<T> op, to_optional_tag)
+    {
+        return std::move(op);
     }
 
     template <typename Adaptor>
