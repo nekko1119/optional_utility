@@ -4,7 +4,7 @@ Header only, `boost::optional` 's utilities.
 
 ## Features
 
- * *map*, *flat map* and *filter*. these interfaces are like *Boost Range Adaptors*
+ * *map*, *flat map* and *filter*. these interfaces, such as *Boost Range Adaptors*
  * Adaptors are lazy evaluation
  * You can use member functions intead of lambda functions
  * Non-member functions, `value`, `value_or` and `value_or_eval`
@@ -33,81 +33,81 @@ Just through the path to your build tree.
 
 ## Usage Example
 
+(In all of the examples, assume that threre are appropriate *using directive*s or `using namespace`s)
+
+ * Join adaptors to another using `operator|`. These interfaces, such as `<optional_value> | <adaptor>(<function>) | ...`
+ * The result is 84
+
 ```cpp
 
-#include "optional_utility.hpp"
-#include <boost/optional/optional_io.hpp>
-#include <iostream>
-#include <random>
-#include <stdexcept>
-#include <string>
-using boost::optional;
+optional<int> op = 42;
+optional<int> result = op
+    | mapped([](int i) { return i * 2; });
 
-// returns joined strings if both strings has a value. otherwise none;
-optional<std::string> full_name(optional<std::string> const& first_name, optional<std::string> const& last_name)
-{
-    using optional_utility::flat_mapped;
-    using optional_utility::mapped;
-    return last_name | flat_mapped([&first_name](std::string const& ln) {
-        return first_name | mapped([&ln](std::string const& fn) {
-            return ln + fn;
-        });
-    });
-}
+```
 
-optional<int> divide(int dividend, int divisor)
-{
-    if (divisor == 0) {
-        return boost::none;
-    }
-    return dividend / divisor;
-}
+ * The result is 42
 
-int main()
-{
-    // `mapped` and `flat_mapped`
-    {
-        // basic usage
-        auto const first_name = boost::make_optional<std::string>("John");
-        auto const last_name = boost::make_optional<std::string>("Smith");
-        std::cout << full_name(first_name, last_name) << std::endl; // John Smith
-        std::cout << full_name(first_name, boost::none) << std::endl; // --
-        std::cout << full_name(boost::none, last_name) << std::endl; // --
-        std::cout << full_name(boost::none, boost::none) << std::endl; // -- 
-    }
-    {
-        // adaptors are lazy evaluation
-        using optional_utility::mapped;
-        auto const op = boost::make_optional<int>(42);
-        int counter = 0;
-        auto const temp = op
-            | mapped([&counter](int i) { ++counter;  return i * 2; })
-            | mapped([&counter](int i) { ++counter;  return i + 1; });
-        // it is not evalutated yet
-        std::cout << counter << std::endl; // 0
-        // it is evaluated
-        boost::optional<int> op2 = temp;
-        std::cout << counter << std::endl; // 2
-        std::cout << op2 << std::endl; // 85
-    }
-    // non-member functions
-    {
+```cpp
 
-        using optional_utility::value_or;
-        auto const op = divide(42, std::random_device{}() % 2);
-        std::cout << value_or(op, 0) << std::endl; // 42 or 0
-    }
-    {
-        using optional_utility::value_or_throw;
-        optional<int> const op = boost::none;
-        try {
-            // throw any exception if optional is none
-            value_or_throw<std::runtime_error>(op, "none!");
-        } catch (std::exception const& e) {
-            std::cout << e.what() << std::endl; // none!
-        }
-    }
-}
+optional<int> op = 42;
+optional<int> result = op
+    | flat_mapped([](int i) { return i % 2 ? make_optional(i) : none; });
 
+```
+
+ * The result is none
+
+```cpp
+
+optional<int> op = 42;
+optional<int> result = op
+    | mapped([](int i) { return i + 1; })
+    | filtered([](int i) { return i % 2; });
+
+```
+
+ * You can use `to_optional` if you want to convert to `optional` explicitly
+ * The result is -42
+
+``` cpp
+
+optional<int> op = 42;
+optional<int> result;
+result = op
+    | mapped([](int i) { return -i; })
+    | to_optional();
+
+```
+
+ * This is error
+
+```cpp
+
+optional<int> op = 42;
+optional<int> result;
+result = op
+    | mapped([](int i) { return -i; }); // error
+
+```
+
+ * You can use member function pointer
+ * The result is 5
+
+```cpp
+
+optional<string> op = "hello"s;
+optional<string::size_type> result = op
+    | mapped(&string::length);
+
+```
+
+ * The result is "ell"
+
+```cpp
+
+optional<string> op = "hello"s;
+optional<std::string> result = op
+    | mapped(&string::substring, 1, 3);
 
 ```
