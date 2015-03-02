@@ -8,6 +8,30 @@
 
 namespace optional_utility
 {
+    template <typename Adaptor, typename Optional>
+    class optional_view;
+
+    namespace optional_utility_detail
+    {
+        template <typename T>
+        struct is_optional
+            : std::false_type
+        {
+        };
+
+        template <typename T>
+        struct is_optional<boost::optional<T>>
+            : std::true_type
+        {
+        };
+
+        template <typename Adaptor, typename Optional>
+        struct is_optional<optional_view<Adaptor, Optional>>
+            : std::true_type
+        {
+        };
+    }
+    
     template <typename T>
     inline typename boost::optional<T>::reference_const_type value(boost::optional<T> const& op)
     {
@@ -77,7 +101,7 @@ namespace optional_utility
         }
         return std::move(op.value());
     }
-
+    
     template <typename T>
     class optional_wrapper
     {
@@ -116,7 +140,7 @@ namespace optional_utility
         }
 
         template <typename T>
-        operator boost::optional<T>() const&
+        operator boost::optional<T> () const&
         {
             return adaptor ? adaptor.get()(optional.evaluate()) : boost::none;
         }
@@ -232,7 +256,7 @@ namespace optional_utility
             if (!op) {
                 return boost::none;
             }
-            return f(op.get()) ? op.get() : boost::none;
+            return f(op.get()) ? op : boost::none;
         }
 
         inline boost::none_t operator()(boost::none_t const&) const noexcept
@@ -256,10 +280,18 @@ namespace optional_utility
 
     struct to_optional_tag
     {
-    } const to_optional{};
+    };
+
+    inline to_optional_tag to_optional() noexcept
+    {
+        return to_optional_tag{};
+    }
 
     template <typename Optional, typename Adaptor>
-    inline optional_view<Adaptor, Optional> operator|(Optional&& op, Adaptor&& adaptor)
+    inline typename std::enable_if<
+        optional_utility_detail::is_optional<Optional>::value,
+        optional_view<Adaptor, Optional>
+    >::type operator|(Optional&& op, Adaptor&& adaptor)
     {
         return optional_view<Adaptor, Optional>(std::forward<Adaptor>(adaptor), std::forward<Optional>(op));
     }

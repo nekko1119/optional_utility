@@ -28,7 +28,7 @@ TEST(value)
 {
     using optional_utility::value;
     {
-        boost::optional<int> op = 42;
+        boost::optional<int> op =  42;
         assert(value(op) == 42);
     }
     {
