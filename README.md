@@ -108,6 +108,6 @@ optional<string::size_type> result = op
 
 optional<string> op = "hello"s;
 optional<std::string> result = op
-    | mapped(&string::substring, 1, 3);
+    | mapped(&string::substr, 1, 3);
 
 ```
