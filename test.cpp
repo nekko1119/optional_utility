@@ -41,6 +41,19 @@ TEST(value)
     }
 };
 
+TEST(value_or)
+{
+    using optional_utility::value_or;
+    {
+        boost::optional<int> op = 42;
+        assert(value_or(op, 84) == 42);
+    }
+    {
+        boost::optional<int> op = boost::none;
+        assert(value_or(op, 84) == 84);
+    }
+};
+
 TEST(mapped)
 {
     using optional_utility::mapped;

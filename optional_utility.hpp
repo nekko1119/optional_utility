@@ -53,7 +53,7 @@ namespace optional_utility
     template <typename T, typename U>
     inline typename boost::optional<T>::value_type value_or(boost::optional<T> const& op, U&& v)
     {
-        return std::move(op.value_or(std::forward<U>(v)));
+        return op.value_or(std::forward<U>(v));
     }
 
     template <typename T, typename U>
@@ -65,7 +65,7 @@ namespace optional_utility
     template <typename T, typename F>
     inline typename boost::optional<T>::value_type value_or_eval(boost::optional<T> const& op, F&& f)
     {
-        return std::move(op.value_or_eval(std::forward<F>(f)));
+        return op.value_or_eval(std::forward<F>(f));
     }
 
     template <typename T, typename F>
@@ -284,7 +284,7 @@ namespace optional_utility
 
     inline to_optional_tag to_optional() noexcept
     {
-        return to_optional_tag{};
+        return {};
     }
 
     template <typename Optional, typename Adaptor>
