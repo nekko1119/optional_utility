@@ -35,7 +35,7 @@ TEST(value)
         boost::optional<int> op = boost::none;
         try {
             value(op);
-            assert(false && "no throwed");
+            assert(false && "not thrown");
         } catch (boost::bad_optional_access const&) {
         }
     }

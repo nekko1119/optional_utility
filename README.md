@@ -31,11 +31,14 @@ Just through the path to your build tree.
  * msvc
    - 14.0PR
 
+gcc and clang was tested on [Wandbox](http://melpon.org/wandbox/)
+
 ## Usage Example
 
 (In all of the examples, assume that threre are appropriate *using directive*s or `using namespace`s)
 
  * Join adaptors to another using `operator|`. These interfaces, such as `<optional_value> | <adaptor>(<function>) | ...`
+
  * The result is 84
 
 ```cpp
@@ -91,7 +94,7 @@ result = op
 
 ```
 
- * You can use member function pointer
+ * You can use member function pointers
  * The result is 5
 
 ```cpp
@@ -111,3 +114,8 @@ optional<std::string> result = op
     | mapped(&string::substr, 1, 3);
 
 ```
+
+## TODO
+
+ * Enough tests
+ * `boost::optional` extented type that has member functions that *map*, *flat_map* and *filter*
