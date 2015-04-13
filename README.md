@@ -114,6 +114,9 @@ optional<std::string> result = op
     | mapped(&string::substr, 1, 3);
 
 ```
+## Customize
+
+If you define `#define OPTIONAL_UTILITY_NAMESPACE op`, optional_utilitiy's namespace is `op`. (default is `optional_utility`)
 
 ## TODO
 

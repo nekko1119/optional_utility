@@ -6,7 +6,12 @@
 #include <utility>
 #include <boost/optional.hpp>
 
-namespace optional_utility
+#ifndef OPTIONAL_UTILITY_NAMESPACE
+#   define OPTIONAL_UTILITY_NAMESPACE optional_utility
+#   define DEFINED_OPTIONAL_UTILITY_NAMESPACE
+#endif
+
+namespace OPTIONAL_UTILITY_NAMESPACE
 {
     template <typename Adaptor, typename Optional>
     class optional_view;
@@ -322,5 +327,10 @@ namespace optional_utility
         return boost::none;
     }
 }
+
+#ifdef DEFINED_OPTIONAL_UTILITY_NAMESPACE
+#   undef DEFINED_OPTIONAL_UTILITY_NAMESPACE
+#   undef OPTIONAL_UTILITY_NAMESPACE
+#endif
 
 #endif
