@@ -16,20 +16,23 @@ Just through the path to your build tree.
 
 ## Dependencies (Requires)
 
- * C++14 or newer
+ * C++11 or newer
+   - You need to define `OPTIONAL_UTILITY_NO_CXX14_RETURN_TYPE_DEDUCTION` macro if you compile c++11 mode. e.g. `std=c++11`
  * boost-1.56.0 or newer
 
 ## Tested Compilers
 
  * gcc
-   - 4.9.0
-   - 4.9.1
-   - 4.9.2
+   - 4.9.0 (all of 11, 1y)
+   - 4.9.1 (all of 11, 1y)
+   - 4.9.2 (all of 11, 1y)
+   - 5.1.0 (all of 11, 14, 1z)
+   - 5.2.0 (all of 11, 14, 1z)
  * clang
-   - 3.4
-   - 3.5
+   - 3.4 (all of 11, 1y)
+   - 3.5 (all of 11, 14, 1z)
  * msvc
-   - 14.0PR
+   - 14.0
 
 gcc and clang was tested on [Wandbox](http://melpon.org/wandbox/)
 
@@ -45,7 +48,7 @@ gcc and clang was tested on [Wandbox](http://melpon.org/wandbox/)
 
 optional<int> op = 42;
 optional<int> result = op
-    | mapped([](int i) { return i * 2; });
+    | map([](int i) { return i * 2; });
 
 ```
 
@@ -55,7 +58,7 @@ optional<int> result = op
 
 optional<int> op = 42;
 optional<int> result = op
-    | flat_mapped([](int i) { return i % 2 ? make_optional(i) : none; });
+    | flat_map([](int i) { return i % 2 ? make_optional(i) : none; });
 
 ```
 
@@ -65,8 +68,8 @@ optional<int> result = op
 
 optional<int> op = 42;
 optional<int> result = op
-    | mapped([](int i) { return i + 1; })
-    | filtered([](int i) { return i % 2; });
+    | map([](int i) { return i + 1; })
+    | filter([](int i) { return i % 2; });
 
 ```
 
@@ -78,8 +81,8 @@ optional<int> result = op
 optional<int> op = 42;
 optional<int> result;
 result = op
-    | mapped([](int i) { return -i; })
-    | to_optional();
+    | map([](int i) { return -i; })
+    | to_optional;
 
 ```
 
@@ -90,7 +93,7 @@ result = op
 optional<int> op = 42;
 optional<int> result;
 result = op
-    | mapped([](int i) { return -i; }); // error
+    | map([](int i) { return -i; }); // error
 
 ```
 
@@ -101,7 +104,7 @@ result = op
 
 optional<string> op = "hello"s;
 optional<string::size_type> result = op
-    | mapped(&string::length);
+    | map(&string::length);
 
 ```
 
@@ -111,7 +114,7 @@ optional<string::size_type> result = op
 
 optional<string> op = "hello"s;
 optional<std::string> result = op
-    | mapped(&string::substr, 1, 3);
+    | map(&string::substr, 1, 3);
 
 ```
 ## Customize

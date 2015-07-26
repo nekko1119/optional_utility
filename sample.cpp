@@ -1,5 +1,13 @@
-﻿#include "optional_utility.hpp"
+﻿// Customize
+// You need to define `OPTIONAL_UTILITY_NO_CXX14_RETURN_TYPE_DEDUCTION` macro if you compile c++11 mode. e.g. `std=c++11`
+// You define `USE_BOOST_LAMBDA` if you want to use Booost.Lambda in sample codes.
+//#define OPTIONAL_UTILITY_NO_CXX14_RETURN_TYPE_DEDUCTION
+//#define USE_BOOST_LAMBDA
+#include "optional_utility.hpp"
 #include <boost/optional/optional_io.hpp>
+#if defined(USE_BOOST_LAMBDA)
+#include <boost/lambda/lambda.hpp>
+#endif
 #include <iostream>
 #include <random>
 #include <stdexcept>
@@ -9,11 +17,11 @@ using boost::optional;
 // returns joined strings if both strings has a value. otherwise none;
 optional<std::string> full_name(optional<std::string> const& first_name, optional<std::string> const& last_name)
 {
-    using optional_utility::flat_mapped;
-    using optional_utility::mapped;
-    return last_name | flat_mapped([&first_name](std::string const& ln) {
-        return first_name | mapped([&ln](std::string const& fn) {
-            return ln + fn;
+    using optional_utility::flat_map;
+    using optional_utility::map;
+    return last_name | flat_map([&first_name](std::string const& ln) {
+        return first_name | map([&ln](std::string const& fn) {
+            return ln + " " + fn;
         });
     });
 }
@@ -28,7 +36,7 @@ optional<int> divide(int dividend, int divisor)
 
 int main()
 {
-    // `mapped` and `flat_mapped`
+    // `map` and `flat_map`
     {
         // basic usage
         auto const first_name = boost::make_optional<std::string>("John");
@@ -40,18 +48,35 @@ int main()
     }
     {
         // adaptors are lazy evaluation
-        using optional_utility::mapped;
+        using optional_utility::map;
         auto const op = boost::make_optional<int>(42);
         int counter = 0;
         auto const temp = op
-            | mapped([&counter](int i) { ++counter;  return i * 2; })
-            | mapped([&counter](int i) { ++counter;  return i + 1; });
+            | map([&counter](int i) { ++counter;  return i * 2; })
+            | map([&counter](int i) { ++counter;  return i + 1; });
         // it is not evalutated yet
         std::cout << counter << std::endl; // 0
         // it is evaluated
-        boost::optional<int> op2 = temp;
+        optional<int> op2 = temp;
         std::cout << counter << std::endl; // 2
         std::cout << op2 << std::endl; // 85
+    }
+    // there are 2 ways to explicitly convert to boost::optional
+    {
+        using boost::make_optional;
+        using optional_utility::map;
+        auto const temp = make_optional(42)
+            | map([](int num) { return num * 2; });
+        // 1. explicit type declaration
+        {
+            optional<int> const op = temp;
+        }
+        // 2. using to_optional
+        {
+            using optional_utility::to_optional;
+            auto const op = temp
+                | to_optional;
+        }
     }
     // non-member functions
     {
@@ -69,12 +94,27 @@ int main()
             std::cout << e.what() << std::endl; // none!
         }
     }
+    // you can use member function pointers
     {
-        using optional_utility::mapped;
+        using optional_utility::map;
         auto const  op = boost::make_optional<std::string>("hello");
-        boost::optional<std::string::size_type> op2 = op
-            | mapped(&std::string::substr, 1, 3)
-            | mapped(&std::string::length);
+        optional<std::string::size_type> op2 = op
+            | map(&std::string::substr, 1, 3)
+            | map(&std::string::length);
         std::cout << op2 << std::endl;
     }
+#if defined(USE_BOOST_LAMBDA)
+    {
+        using optional_utility::map;
+        using optional_utility::filter;
+        using optional_utility::to_optional;
+        using boost::lambda::_1;
+        auto const op = boost::make_optional<std::string>("42")
+            | map(_1 + _1)
+            | map([](std::string const& s) { return std::stoi(s); })
+            | filter(_1 % 2 == 0)
+            | to_optional;
+        std::cout << op << std::endl;
+    }
+#endif
 }

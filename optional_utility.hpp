@@ -11,6 +11,7 @@
 #   define DEFINED_OPTIONAL_UTILITY_NAMESPACE
 #endif
 
+
 namespace OPTIONAL_UTILITY_NAMESPACE
 {
     template <typename Adaptor, typename Optional>
@@ -19,19 +20,19 @@ namespace OPTIONAL_UTILITY_NAMESPACE
     namespace optional_utility_detail
     {
         template <typename T>
-        struct is_optional
+        struct is_optional_or_view
             : std::false_type
         {
         };
 
         template <typename T>
-        struct is_optional<boost::optional<T>>
+        struct is_optional_or_view<boost::optional<T>>
             : std::true_type
         {
         };
 
         template <typename Adaptor, typename Optional>
-        struct is_optional<optional_view<Adaptor, Optional>>
+        struct is_optional_or_view<optional_view<Adaptor, Optional>>
             : std::true_type
         {
         };
@@ -144,6 +145,7 @@ namespace OPTIONAL_UTILITY_NAMESPACE
         {
         }
 
+        // implicit converzation
         template <typename T>
         operator boost::optional<T> () const&
         {
@@ -157,22 +159,24 @@ namespace OPTIONAL_UTILITY_NAMESPACE
         }
 
         auto evaluate() const&
+            -> decltype(adaptor ? adaptor.get()(optional.evaluate()) : boost::none)
         {
             return adaptor ? adaptor.get()(optional.evaluate()) : boost::none;
         }
 
         auto evaluate() &&
+            -> decltype(adaptor ? adaptor.get()(optional.evaluate()) : boost::none)
         {
             return adaptor ? adaptor.get()(optional.evaluate()) : boost::none;
         }
     };
 
     template <typename F>
-    class flat_mapped_t
+    class flat_map_t
     {
         F f;
     public:
-        explicit flat_mapped_t(F f)
+        explicit flat_map_t(F f)
             : f(std::move(f))
         {
         }
@@ -193,24 +197,35 @@ namespace OPTIONAL_UTILITY_NAMESPACE
     };
 
     template <typename F>
-    inline flat_mapped_t<F> flat_mapped(F&& f)
+    inline flat_map_t<F> flat_map(F&& f)
     {
-        return flat_mapped_t<F>(std::forward<F>(f));
+        return flat_map_t<F>(std::forward<F>(f));
     }
 
     template <typename R, typename T, typename ...Params, typename ...Args>
-    inline auto flat_mapped(R(T::*mem_fun)(Params...) const, Args&&... args)
+    inline
+#if defined(OPTIONAL_UTILITY_NO_CXX14_RETURN_TYPE_DEDUCTION)
+        flat_map_t<std::function<R (T)>>
+#else
+        auto
+#endif
+        flat_map(R (T::*mem_fun)(Params...) const, Args&&... args)
     {
         // be careful to referenced object lifetime
-        return flat_mapped([&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); });
+#if defined(OPTIONAL_UTILITY_NO_CXX14_RETURN_TYPE_DEDUCTION)
+        std::function<R (T)> f = [&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); };
+        return flat_map(std::move(f));
+#else
+        return flat_map([&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); });
+#endif
     }
 
     template <typename F>
-    class mapped_t
+    class map_t
     {
         F f;
     public:
-        explicit mapped_t(F f)
+        explicit map_t(F f)
             : f(std::move(f))
         {
         }
@@ -232,24 +247,35 @@ namespace OPTIONAL_UTILITY_NAMESPACE
     };
 
     template <typename F>
-    inline mapped_t<F> mapped(F&& f)
+    inline map_t<F> map(F&& f)
     {
-        return mapped_t<F>(std::forward<F>(f));
+        return map_t<F>(std::forward<F>(f));
     }
 
     template <typename R, typename T, typename ...Params, typename ...Args>
-    inline auto mapped(R(T::*mem_fun)(Params...) const, Args&&... args)
+    inline
+#if defined(OPTIONAL_UTILITY_NO_CXX14_RETURN_TYPE_DEDUCTION)
+        map_t<std::function<R (T)>>
+#else
+        auto
+#endif
+        map(R (T::*mem_fun)(Params...) const, Args&&... args)
     {
         // be careful to referenced object lifetime
-        return mapped([&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); });
+#if defined(OPTIONAL_UTILITY_NO_CXX14_RETURN_TYPE_DEDUCTION)
+        std::function<R (T)> f = [&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); };
+        return map(std::move(f));
+#else
+        return map([&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); });
+#endif
     }
 
     template <typename F>
-    class filtered_t
+    class filter_t
     {
         F f;
     public:
-        explicit filtered_t(F f)
+        explicit filter_t(F f)
             : f(std::move(f))
         {
         }
@@ -271,38 +297,50 @@ namespace OPTIONAL_UTILITY_NAMESPACE
     };
 
     template <typename F>
-    inline filtered_t<F> filtered(F&& f)
+    inline filter_t<F> filter(F&& f)
     {
-        return filtered_t<F>(std::forward<F>(f));
+        return filter_t<F>(std::forward<F>(f));
     }
 
     template <typename R, typename T, typename ...Params, typename ...Args>
-    inline auto filtered(R(T::*mem_fun)(Params...) const, Args&&... args)
+    inline
+#if defined(OPTIONAL_UTILITY_NO_CXX14_RETURN_TYPE_DEDUCTION)
+        filter_t<std::function<R (T)>>
+#else
+        auto
+#endif
+        filter(R (T::*mem_fun)(Params...) const, Args&&... args)
     {
         // be careful to referenced object lifetime
-        return filtered([&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); });
+#if defined(OPTIONAL_UTILITY_NO_CXX14_RETURN_TYPE_DEDUCTION)
+        std::function<R (T)> f = [&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); };
+        return filter(std::move(f));
+#else
+        return filter([&, mem_fun](T const& t) { return (t.*mem_fun)(std::forward<Args>(args)...); });
+#endif
     }
 
     struct to_optional_tag
     {
     };
 
-    inline to_optional_tag to_optional() noexcept
-    {
-        return {};
-    }
+    BOOST_CONSTEXPR_OR_CONST to_optional_tag to_optional = {};
 
     template <typename Optional, typename Adaptor>
-    inline typename std::enable_if<
-        optional_utility_detail::is_optional<Optional>::value,
-        optional_view<Adaptor, Optional>
-    >::type operator|(Optional&& op, Adaptor&& adaptor)
+    inline auto operator|(Optional&& op, Adaptor&& adaptor) ->
+        typename std::enable_if<
+            optional_utility_detail::is_optional_or_view<Optional>::value,
+            optional_view<Adaptor, Optional>
+        >::type
     {
         return optional_view<Adaptor, Optional>(std::forward<Adaptor>(adaptor), std::forward<Optional>(op));
     }
 
     template <typename Optional>
     inline auto operator|(Optional&& op, to_optional_tag)
+#if defined(OPTIONAL_UTILITY_NO_CXX14_RETURN_TYPE_DEDUCTION)
+        -> decltype(op.evaluate())
+#endif
     {
         return op.evaluate();
     }
