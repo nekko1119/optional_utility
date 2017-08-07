@@ -119,3 +119,9 @@ TEST(member_function)
         assert(op2.get() == "ell");
     }
 };
+
+#include <iostream>
+
+int main() {
+    std::cout << "tests finished" << std::endl;
+}
