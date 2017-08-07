@@ -37,7 +37,7 @@ namespace OPTIONAL_UTILITY_NAMESPACE
         {
         };
     }
-    
+
     template <typename T>
     inline typename boost::optional<T>::reference_const_type value(boost::optional<T> const& op)
     {
@@ -107,7 +107,7 @@ namespace OPTIONAL_UTILITY_NAMESPACE
         }
         return std::move(op.value());
     }
-    
+
     template <typename T>
     class optional_wrapper
     {
@@ -184,6 +184,7 @@ namespace OPTIONAL_UTILITY_NAMESPACE
         template <typename T, typename R = typename std::result_of<F(T)>::type>
         R operator()(boost::optional<T> const& op) const
         {
+            static_assert(!std::is_void<R>::value, "Function must not return void type");
             if (!op) {
                 return boost::none;
             }
